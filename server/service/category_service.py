@@ -24,6 +24,7 @@ def _build_tree(flat_list: list[dict]) -> list[CategoryTreeNode]:
             icon=cat["icon"],
             sort_order=cat["sort_order"],
             is_system=cat["is_system"],
+            expense_nature=cat.get("expense_nature"),
             children=children,
         )
 
@@ -87,6 +88,10 @@ def update_category(category_id: int, data: UpdateCategoryRequest) -> dict:
         fields["icon"] = data.icon
     if data.sort_order is not None:
         fields["sort_order"] = data.sort_order
+
+    # Support expense_nature update
+    if hasattr(data, 'expense_nature') and data.expense_nature is not None:
+        fields["expense_nature"] = data.expense_nature
 
     if not fields:
         conn = get_connection()

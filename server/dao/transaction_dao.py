@@ -119,6 +119,7 @@ def insert(
     date: str,
     note: str,
     tags: str,
+    expense_nature: str | None = None,
 ) -> int:
     """Insert a new transaction and return the new row id. tags should be a JSON string."""
     # If tags is already a string, ensure it's valid JSON for MySQL JSON column
@@ -130,10 +131,10 @@ def insert(
     with conn.cursor() as cursor:
         cursor.execute(
             """
-            INSERT INTO transactions (type, amount, category_id, sub_category_id, account_id, date, note, tags)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO transactions (type, amount, category_id, sub_category_id, account_id, date, note, tags, expense_nature)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
-            (type_, amount, category_id, sub_category_id, account_id, date, note, tags_json),
+            (type_, amount, category_id, sub_category_id, account_id, date, note, tags_json, expense_nature),
         )
         return cursor.lastrowid
 

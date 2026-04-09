@@ -1,7 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Card, Tabs, Tree, Button, Modal, Form, Input, Space, Popconfirm, message } from 'antd';
+import { Card, Tabs, Tree, Button, Modal, Form, Input, Select, Space, Popconfirm, Tag, message } from 'antd';
 import { PlusOutlined, DeleteOutlined, LockOutlined } from '@ant-design/icons';
 import { useCategoryStore } from '../stores/categoryStore';
+import { updateCategory } from '../api/categories';
+import type { CategoryTreeNode } from '../types';
+
+const NATURE_MAP: Record<string, { label: string; color: string }> = {
+  fixed: { label: '固定支出', color: 'blue' },
+  variable: { label: '可变支出', color: 'orange' },
+  discretionary: { label: '非必要', color: 'purple' },
+};
+
+const NATURE_OPTIONS = [
+  { label: '固定支出', value: 'fixed' },
+  { label: '可变支出', value: 'variable' },
+  { label: '非必要支出', value: 'discretionary' },
+];
 
 export default function CategoryManage() {
   const { expenseTree, incomeTree, fetchCategories, addCategory, removeCategory } = useCategoryStore();
@@ -33,6 +47,7 @@ export default function CategoryManage() {
         name: values.name,
         type: catType,
         parent_id: parentId,
+        expense_nature: catType === 'expense' ? (values.expense_nature || null) : undefined,
       });
       message.success('添加成功');
       setModalOpen(false);
@@ -41,13 +56,39 @@ export default function CategoryManage() {
     }
   };
 
-  const buildTreeData = (nodes: any[], type: string): any[] =>
+  const handleNatureChange = async (nodeId: number, nature: string) => {
+    try {
+      await updateCategory(nodeId, { expense_nature: nature } as any);
+      message.success('属性已更新');
+      fetchCategories(true);
+    } catch (err: any) {
+      message.error(err.message || '更新失败');
+    }
+  };
+
+  const buildTreeData = (nodes: CategoryTreeNode[], type: string): any[] =>
     nodes.map(node => ({
       key: node.id,
       title: (
         <Space>
           <span>{node.name}</span>
           {node.is_system === 1 && <LockOutlined style={{ color: '#999', fontSize: 12 }} />}
+          {type === 'expense' && node.expense_nature && NATURE_MAP[node.expense_nature as keyof typeof NATURE_MAP] && (
+            <Tag color={NATURE_MAP[node.expense_nature as keyof typeof NATURE_MAP]!.color} style={{ fontSize: 11, lineHeight: '18px', padding: '0 4px' }}>
+              {NATURE_MAP[node.expense_nature as keyof typeof NATURE_MAP]!.label}
+            </Tag>
+          )}
+          {type === 'expense' && (
+            <Select
+              size="small"
+              value={node.expense_nature || undefined}
+              placeholder="属性"
+              allowClear
+              style={{ width: 100, fontSize: 12 }}
+              options={NATURE_OPTIONS}
+              onChange={(val) => handleNatureChange(node.id, val)}
+            />
+          )}
           {!node.is_system && (
             <Popconfirm title="确认删除？" onConfirm={() => removeCategory(node.id)}>
               <DeleteOutlined style={{ color: '#ff4d4f', cursor: 'pointer', fontSize: 12 }} />
@@ -101,6 +142,11 @@ export default function CategoryManage() {
           <Form.Item name="name" label="名称" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
+          {catType === 'expense' && (
+            <Form.Item name="expense_nature" label="支出属性">
+              <Select placeholder="选择支出属性（可选）" allowClear options={NATURE_OPTIONS} />
+            </Form.Item>
+          )}
         </Form>
       </Modal>
     </Card>

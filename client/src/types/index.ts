@@ -17,6 +17,7 @@ export interface Category {
   icon: string;
   sort_order: number;
   is_system: number;
+  expense_nature?: 'fixed' | 'variable' | 'discretionary' | null;
   created_at: string;
 }
 
@@ -27,6 +28,7 @@ export interface CategoryTreeNode {
   icon: string;
   sort_order: number;
   is_system: number;
+  expense_nature?: 'fixed' | 'variable' | 'discretionary' | null;
   children: CategoryTreeNode[];
 }
 
@@ -40,6 +42,7 @@ export interface Transaction {
   date: string;
   note: string;
   tags: string;
+  expense_nature?: 'fixed' | 'variable' | 'discretionary' | null;
   created_at: string;
   updated_at: string;
   category_name?: string;
@@ -89,6 +92,7 @@ export interface CreateCategoryRequest {
   type: string;
   parent_id?: number | null;
   icon?: string;
+  expense_nature?: string | null;
 }
 
 export interface CreateTransactionRequest {
@@ -100,6 +104,7 @@ export interface CreateTransactionRequest {
   date: string;
   note?: string;
   tags?: string[];
+  expense_nature?: 'fixed' | 'variable' | 'discretionary' | null;
 }
 
 export interface TransactionQuery {
@@ -116,4 +121,12 @@ export interface CreateBudgetRequest {
   category_id: number;
   month: string;
   amount: number;
+}
+
+export interface TransferRequest {
+  from_account_id: number;
+  to_account_id: number;
+  amount: number;
+  date: string;
+  note?: string;
 }

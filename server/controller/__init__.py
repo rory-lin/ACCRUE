@@ -5,6 +5,8 @@ from controller import (
     stats_controller,
     ai_controller,
     export_controller,
+    settings_controller,
+    auth_controller,
 )
 
 __all__ = [
@@ -14,4 +16,6 @@ __all__ = [
     "stats_controller",
     "ai_controller",
     "export_controller",
+    "settings_controller",
+    "auth_controller",
 ]

@@ -1,6 +1,7 @@
 import json
 
 from dao import account_dao
+from dao import category_dao
 from dao import transaction_dao
 from db.database import get_connection
 from models.transaction import CreateTransactionRequest, UpdateTransactionRequest, TransactionQuery
@@ -27,6 +28,13 @@ def create_transaction(data: CreateTransactionRequest) -> dict:
     try:
         tags_str = json.dumps(data.tags) if data.tags else "[]"
 
+        # Determine expense_nature: use provided value, or inherit from category
+        expense_nature = data.expense_nature
+        if expense_nature is None and data.type.value == "expense":
+            category = category_dao.find_by_id(conn, data.category_id)
+            if category and category.get("expense_nature"):
+                expense_nature = category["expense_nature"]
+
         new_id = transaction_dao.insert(
             conn,
             type_=data.type.value,
@@ -37,6 +45,7 @@ def create_transaction(data: CreateTransactionRequest) -> dict:
             date=data.date,
             note=data.note,
             tags=tags_str,
+            expense_nature=expense_nature,
         )
 
         # Update account balance: positive for income, negative for expense
@@ -78,6 +87,8 @@ def update_transaction(transaction_id: int, data: UpdateTransactionRequest) -> d
             fields["note"] = data.note
         if data.tags is not None:
             fields["tags"] = json.dumps(data.tags)
+        if data.expense_nature is not None:
+            fields["expense_nature"] = data.expense_nature
 
         if not fields:
             return old
@@ -121,6 +132,32 @@ def delete_transaction(transaction_id: int) -> bool:
 
         conn.commit()
         return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def create_transfer(data):
+    conn = get_connection()
+    try:
+        from dao import transaction_dao, account_dao
+        # Create expense record (from account)
+        note = f"[转账] {data.note}" if data.note else "[转账]"
+        transaction_dao.insert(
+            conn, 'expense', data.amount, None, None,
+            data.from_account_id, data.date, note, json.dumps([])
+        )
+        account_dao.update_balance(conn, data.from_account_id, -data.amount)
+        # Create income record (to account)
+        transaction_dao.insert(
+            conn, 'income', data.amount, None, None,
+            data.to_account_id, data.date, note, json.dumps([])
+        )
+        account_dao.update_balance(conn, data.to_account_id, data.amount)
+        conn.commit()
+        return {"success": True}
     except Exception:
         conn.rollback()
         raise

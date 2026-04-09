@@ -10,6 +10,7 @@ import {
   WalletOutlined,
   TagsOutlined,
   SettingOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons';
 
 const { Sider, Content } = AntLayout;
@@ -27,7 +28,7 @@ const menuItems = [
 
 const bottomNavItems = menuItems.slice(0, 5); // Mobile only shows first 5
 
-export default function MainLayout() {
+export default function MainLayout({ onLogout }: { onLogout: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -41,6 +42,15 @@ export default function MainLayout() {
   if (isMobile) {
     return (
       <div style={{ paddingBottom: 60 }}>
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '8px 16px', background: '#fff', borderBottom: '1px solid #f0f0f0',
+        }}>
+          <span style={{ fontSize: 18, fontWeight: 'bold', color: '#1890ff' }}>Accrue</span>
+          <span onClick={onLogout} style={{ cursor: 'pointer', color: '#999', fontSize: 14 }}>
+            <LogoutOutlined /> 退出
+          </span>
+        </div>
         <Content style={{ padding: '12px', minHeight: '100vh' }}>
           <Outlet />
         </Content>
@@ -71,7 +81,7 @@ export default function MainLayout() {
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
-      <Sider width={200} theme="light">
+      <Sider width={200} theme="light" style={{ display: 'flex', flexDirection: 'column' }}>
         <div style={{ height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 'bold', color: '#1890ff', borderBottom: '1px solid #f0f0f0' }}>
           Accrue
         </div>
@@ -80,8 +90,17 @@ export default function MainLayout() {
           selectedKeys={[location.pathname]}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
-          style={{ borderRight: 0 }}
+          style={{ borderRight: 0, flex: 1 }}
         />
+        <div
+          onClick={onLogout}
+          style={{
+            padding: '12px 24px', borderTop: '1px solid #f0f0f0',
+            cursor: 'pointer', color: '#999', fontSize: 14,
+          }}
+        >
+          <LogoutOutlined /> 退出登录
+        </div>
       </Sider>
       <AntLayout>
         <Content style={{ padding: '24px', background: '#f5f5f5' }}>

@@ -57,6 +57,20 @@ MIGRATIONS = {
         "CREATE INDEX idx_transactions_account ON transactions(account_id);",
         "CREATE INDEX idx_transactions_category ON transactions(category_id);",
     ],
+    3: [
+        "ALTER TABLE categories ADD COLUMN expense_nature ENUM('fixed', 'variable', 'discretionary') DEFAULT NULL;",
+        "ALTER TABLE transactions ADD COLUMN expense_nature ENUM('fixed', 'variable', 'discretionary') DEFAULT NULL;",
+        "UPDATE categories SET expense_nature = 'fixed' WHERE name = '居住生活' AND type = 'expense';",
+        "UPDATE categories SET expense_nature = 'fixed' WHERE name = '金融保险' AND type = 'expense';",
+        "UPDATE categories SET expense_nature = 'variable' WHERE name = '食品饮食' AND type = 'expense';",
+        "UPDATE categories SET expense_nature = 'variable' WHERE name = '交通出行' AND type = 'expense';",
+        "UPDATE categories SET expense_nature = 'variable' WHERE name = '医疗健康' AND type = 'expense';",
+        "UPDATE categories SET expense_nature = 'variable' WHERE name = '教育学习' AND type = 'expense';",
+        "UPDATE categories SET expense_nature = 'variable' WHERE name = '人情往来' AND type = 'expense';",
+        "UPDATE categories SET expense_nature = 'discretionary' WHERE name = '消费购物' AND type = 'expense';",
+        "UPDATE categories SET expense_nature = 'discretionary' WHERE name = '休闲娱乐' AND type = 'expense';",
+        "UPDATE categories SET expense_nature = 'discretionary' WHERE name = '其他支出' AND type = 'expense';",
+    ],
 }
 
 

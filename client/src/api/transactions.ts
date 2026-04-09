@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { ApiResponse, PaginatedData, Transaction, CreateTransactionRequest, TransactionQuery } from '../types';
+import type { ApiResponse, PaginatedData, Transaction, CreateTransactionRequest, TransactionQuery, TransferRequest } from '../types';
 
 function buildQuery(params: TransactionQuery): string {
   const qs = new URLSearchParams();
@@ -28,3 +28,6 @@ export const updateTransaction = (id: number, data: Partial<Transaction>) =>
 
 export const deleteTransaction = (id: number) =>
   api.delete<ApiResponse<{ deleted: boolean }>>(`/transactions/${id}`);
+
+export const createTransfer = (data: TransferRequest) =>
+  api.post<ApiResponse<{ success: boolean }>>('/transactions/transfers', data);

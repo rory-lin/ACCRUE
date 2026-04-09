@@ -8,6 +8,7 @@ import traceback
 
 from db.database import init_db
 from config import get_config
+from middleware.auth import AuthMiddleware
 
 
 @asynccontextmanager
@@ -38,22 +39,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.add_middleware(AuthMiddleware)
+
 # Import and mount controllers
 from controller import (
+    auth_controller,
     account_controller,
     category_controller,
     transaction_controller,
     stats_controller,
     ai_controller,
     export_controller,
+    settings_controller,
 )
 
+app.include_router(auth_controller.router)
 app.include_router(account_controller.router)
 app.include_router(category_controller.router)
 app.include_router(transaction_controller.router)
 app.include_router(stats_controller.router)
 app.include_router(ai_controller.router)
 app.include_router(export_controller.router)
+app.include_router(settings_controller.router)
 
 # Serve frontend static files in production
 client_dist = os.path.join(os.path.dirname(__file__), "..", "client", "dist")

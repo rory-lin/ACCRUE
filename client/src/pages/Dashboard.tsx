@@ -27,8 +27,8 @@ export default function Dashboard() {
     async function loadData() {
       setLoading(true);
       try {
-        await fetchAccounts();
-        const [summaryRes, txnRes, catRes] = await Promise.all([
+        const [, summaryRes, txnRes, catRes] = await Promise.all([
+          fetchAccounts(),
           getSummary(monthStart, monthEnd),
           getTransactions({ page: 1, page_size: 5 }),
           getByCategory('expense', monthStart, monthEnd),

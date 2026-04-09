@@ -9,6 +9,12 @@ import type { TransactionQuery } from '../types';
 
 const { RangePicker } = DatePicker;
 
+const NATURE_TAG_MAP: Record<string, { label: string; color: string }> = {
+  fixed: { label: '固定', color: 'blue' },
+  variable: { label: '可变', color: 'orange' },
+  discretionary: { label: '非必要', color: 'purple' },
+};
+
 export default function TransactionList() {
   const { transactions, total, loading, fetchTransactions, removeTransaction } = useTransactionStore();
   const { accounts, fetchAccounts } = useAccountStore();
@@ -37,14 +43,35 @@ export default function TransactionList() {
       title: '类型',
       dataIndex: 'type',
       key: 'type',
-      width: 70,
-      render: (type: string) => type === 'income' ? <Tag color="green">收入</Tag> : <Tag color="red">支出</Tag>,
+      width: 100,
+      render: (type: string, record: any) => {
+        const tags = [];
+        if (type === 'transfer' || record.note?.startsWith('[转账]')) {
+          tags.push(<Tag color="cyan" key="transfer">转账</Tag>);
+        } else if (type === 'income') {
+          tags.push(<Tag color="green" key="type">收入</Tag>);
+        } else {
+          tags.push(<Tag color="red" key="type">支出</Tag>);
+        }
+        return <Space size={4}>{tags}</Space>;
+      },
     },
     {
       title: '分类',
       key: 'category',
       render: (_: any, record: any) =>
         `${record.category_name || ''}${record.sub_category_name ? ' / ' + record.sub_category_name : ''}`,
+    },
+    {
+      title: '属性',
+      dataIndex: 'expense_nature',
+      key: 'expense_nature',
+      width: 80,
+      render: (nature: string | null) => {
+        if (!nature || !NATURE_TAG_MAP[nature]) return '-';
+        const { label, color } = NATURE_TAG_MAP[nature];
+        return <Tag color={color}>{label}</Tag>;
+      },
     },
     {
       title: '金额',
@@ -132,7 +159,7 @@ export default function TransactionList() {
           total,
           onChange: (page, pageSize) => setQuery({ ...query, page, page_size: pageSize }),
         }}
-        scroll={{ x: 700 }}
+        scroll={{ x: 800 }}
         size="small"
       />
     </Card>

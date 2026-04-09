@@ -17,6 +17,7 @@ class CreateTransactionRequest(BaseModel):
     date: str
     note: str = ""
     tags: list[str] = []
+    expense_nature: Optional[str] = None
 
 
 class UpdateTransactionRequest(BaseModel):
@@ -28,6 +29,7 @@ class UpdateTransactionRequest(BaseModel):
     date: Optional[str] = None
     note: Optional[str] = None
     tags: Optional[list[str]] = None
+    expense_nature: Optional[str] = None
 
 
 class TransactionResponse(BaseModel):
@@ -40,6 +42,7 @@ class TransactionResponse(BaseModel):
     date: str
     note: str
     tags: str  # JSON string
+    expense_nature: Optional[str] = None
     created_at: str
     updated_at: str
     category_name: Optional[str] = None
@@ -55,3 +58,11 @@ class TransactionQuery(BaseModel):
     date_to: Optional[str] = None
     page: int = 1
     page_size: int = 20
+
+
+class TransferRequest(BaseModel):
+    from_account_id: int
+    to_account_id: int
+    amount: float
+    date: str
+    note: str = ""

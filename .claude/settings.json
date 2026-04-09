@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/project/**)",
+      "Bash(npm --version)",
+      "Bash(npx --version)",
+      "Bash(npm view:*)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(timeout 10 python -c \"from main import app; print\\('FastAPI app created successfully'\\)\")",
+      "Bash(timeout 8 python main.py)",
+      "Bash(python main.py)",
+      "Bash(npx vite:*)",
+      "Bash(curl -s http://localhost:3001/api/accounts)",
+      "Bash(python -m json.tool)",
+      "Bash(curl -v http://localhost:3001/api/accounts)",
+      "Bash(taskkill //F //IM \"python.exe\" //FI \"WINDOWTITLE eq *main.py*\")",
+      "Bash(pkill -f \"python.*main.py\")",
+      "Bash(tasklist //FI \"IMAGENAME eq python.exe\")",
+      "Bash(taskkill //F //PID 36016 //PID 68420 //PID 80884 //PID 17496)",
+      "Bash(curl -s http://localhost:3001/api/categories?type=expense)",
+      "Bash(curl -s -X POST http://localhost:3001/api/transactions -H 'Content-Type: application/json' -d '{\"type\":\"expense\",\"amount\":25.5,\"category_id\":2,\"account_id\":1,\"date\":\"2026-04-09\",\"note\":\"午餐\",\"tags\":[]}')",
+      "Bash(curl -s -X POST http://localhost:3001/api/transactions -H \"Content-Type: application/json\" -d \"{\\\\\"type\\\\\":\\\\\"expense\\\\\",\\\\\"amount\\\\\":25.5,\\\\\"category_id\\\\\":2,\\\\\"account_id\\\\\":1,\\\\\"date\\\\\":\\\\\"2026-04-09\\\\\",\\\\\"note\\\\\":\\\\\"lunch\\\\\",\\\\\"tags\\\\\":[]}\")",
+      "Bash(timeout 8 python -c \"from main import app; print\\('OK'\\)\")",
+      "Bash(python -c ':*)"
+    ]
+  }
+}

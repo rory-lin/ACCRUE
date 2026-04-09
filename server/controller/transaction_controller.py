@@ -8,6 +8,7 @@ from models.transaction import (
     CreateTransactionRequest,
     UpdateTransactionRequest,
     TransactionQuery,
+    TransferRequest,
 )
 from service import transaction_service
 
@@ -72,3 +73,10 @@ async def delete_transaction(transaction_id: int):
     if not success:
         raise HTTPException(status_code=400, detail="Cannot delete transaction")
     return ApiResponse(data={"deleted": True})
+
+
+@router.post("/transfers")
+async def create_transfer(data: TransferRequest):
+    from service.transaction_service import create_transfer as do_transfer
+    result = do_transfer(data)
+    return ApiResponse(data=result)

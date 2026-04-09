@@ -54,6 +54,18 @@ def find_sub_by_name(
         return cursor.fetchone()
 
 
+def find_sub_by_name_fuzzy(
+    conn: pymysql.Connection, name: str, parent_id: int
+) -> dict | None:
+    """Find a sub-category by fuzzy name match under a given parent."""
+    with conn.cursor() as cursor:
+        cursor.execute(
+            "SELECT * FROM categories WHERE name LIKE %s AND parent_id = %s",
+            (f"%{name}%", parent_id),
+        )
+        return cursor.fetchone()
+
+
 def insert(
     conn: pymysql.Connection,
     name: str,
