@@ -1,0 +1,11 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+pyyaml>=6.0.2
+openai>=1.60.0
+openpyxl>=3.1.5
+python-multipart>=0.0.18
+pymysql>=1.1.1
+cryptography>=44.0.0
+dbutils>=3.1.0
