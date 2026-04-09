@@ -7,6 +7,7 @@ def get_client() -> OpenAI:
     return OpenAI(
         base_url=cfg["base_url"],
         api_key=cfg["api_key"],
+        timeout=30.0,
     )
 
 

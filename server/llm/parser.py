@@ -8,14 +8,21 @@ def _build_category_tree_text(conn) -> str:
     """Build category tree text for the LLM prompt."""
     lines = []
     for type_ in ("expense", "income"):
-        cats = category_dao.find_all(conn, type_)
+        all_cats = category_dao.find_all(conn, type_)
         type_label = "支出" if type_ == "expense" else "收入"
         lines.append(f"{type_label}分类：")
-        for cat in cats:
+        # Build children map once
+        children_map = {}
+        for c in all_cats:
+            pid = c.get("parent_id")
+            if pid is not None:
+                children_map.setdefault(pid, []).append(c)
+        # Only list root categories (parent_id is None)
+        for cat in all_cats:
+            if cat.get("parent_id") is not None:
+                continue
             sub_text = ""
-            subs = category_dao.find_all(conn, type_)
-            # Find children by parent_id
-            children = [c for c in subs if c.get("parent_id") == cat["id"]]
+            children = children_map.get(cat["id"], [])
             if children:
                 sub_names = "、".join(c["name"] for c in children)
                 sub_text = f"（含子分类：{sub_names}）"
