@@ -1,15 +1,13 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import MainLayout from './components/Layout';
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import RecordPage from './pages/RecordPage';
-import TransactionList from './pages/TransactionList';
-import Statistics from './pages/Statistics';
-import AccountManage from './pages/AccountManage';
-import CategoryManage from './pages/CategoryManage';
-import BudgetPage from './pages/BudgetPage';
-import Settings from './pages/Settings';
+import MobileLayout from '@/components/layout/MobileLayout';
+import LoginPage from '@/pages/LoginPage';
+import HomePage from '@/pages/HomePage';
+import RecordPage from '@/pages/RecordPage';
+import CalendarPage from '@/pages/CalendarPage';
+import AccountsPage from '@/pages/AccountsPage';
+import StatisticsPage from '@/pages/StatisticsPage';
+import SettingsPage from '@/pages/SettingsPage';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -20,22 +18,20 @@ export default function App() {
   };
 
   if (!token) {
-    return <Login onLogin={(t) => setToken(t)} />;
+    return <LoginPage onLogin={(t) => { localStorage.setItem('token', t); setToken(t); }} />;
   }
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<MainLayout onLogout={handleLogout} />}>
-          <Route index element={<Dashboard />} />
-          <Route path="record" element={<RecordPage />} />
-          <Route path="transactions" element={<TransactionList />} />
-          <Route path="statistics" element={<Statistics />} />
-          <Route path="accounts" element={<AccountManage />} />
-          <Route path="categories" element={<CategoryManage />} />
-          <Route path="budgets" element={<BudgetPage />} />
-          <Route path="settings" element={<Settings />} />
+        <Route path="/" element={<MobileLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path="calendar" element={<CalendarPage />} />
+          <Route path="accounts" element={<AccountsPage />} />
+          <Route path="statistics" element={<StatisticsPage />} />
+          <Route path="settings" element={<SettingsPage onLogout={handleLogout} />} />
         </Route>
+        <Route path="/record" element={<RecordPage />} />
       </Routes>
     </BrowserRouter>
   );
