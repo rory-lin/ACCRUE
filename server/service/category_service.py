@@ -4,6 +4,7 @@ from typing import Optional
 from dao import category_dao
 from db.database import get_connection
 from models.category import CategoryTreeNode, CreateCategoryRequest, UpdateCategoryRequest
+from utils.cache import ttl_cache, invalidate_cache
 
 
 def _build_tree(flat_list: list[dict]) -> list[CategoryTreeNode]:
@@ -33,6 +34,7 @@ def _build_tree(flat_list: list[dict]) -> list[CategoryTreeNode]:
     return [_make_node(root) for root in roots]
 
 
+@ttl_cache("categories_list", ttl=120)
 def list_categories(type_: str | None = None) -> list[CategoryTreeNode]:
     conn = get_connection()
     try:
@@ -53,13 +55,11 @@ def get_category(category_id: int) -> dict | None:
 def create_category(data: CreateCategoryRequest) -> dict:
     conn = get_connection()
     try:
-        # Validate parent exists if parent_id is given
         if data.parent_id is not None:
             parent = category_dao.find_by_id(conn, data.parent_id)
             if parent is None:
                 raise ValueError("Parent category not found")
 
-        # Get max sort_order for this type and increment
         max_order = category_dao.get_max_sort_order(conn, data.type)
 
         new_id = category_dao.insert(
@@ -72,6 +72,7 @@ def create_category(data: CreateCategoryRequest) -> dict:
             is_system=0,
         )
         conn.commit()
+        invalidate_cache("categories_list")
         return category_dao.find_by_id(conn, new_id)
     except Exception:
         conn.rollback()
@@ -88,8 +89,6 @@ def update_category(category_id: int, data: UpdateCategoryRequest) -> dict:
         fields["icon"] = data.icon
     if data.sort_order is not None:
         fields["sort_order"] = data.sort_order
-
-    # Support expense_nature update
     if hasattr(data, 'expense_nature') and data.expense_nature is not None:
         fields["expense_nature"] = data.expense_nature
 
@@ -104,6 +103,7 @@ def update_category(category_id: int, data: UpdateCategoryRequest) -> dict:
     try:
         category_dao.update(conn, category_id, **fields)
         conn.commit()
+        invalidate_cache("categories_list")
         return category_dao.find_by_id(conn, category_id)
     except Exception:
         conn.rollback()
@@ -115,20 +115,19 @@ def update_category(category_id: int, data: UpdateCategoryRequest) -> dict:
 def delete_category(category_id: int) -> bool:
     conn = get_connection()
     try:
-        # Check category exists and is not system
         cat = category_dao.find_by_id(conn, category_id)
         if cat is None:
             return False
         if cat["is_system"] == 1:
             return False
 
-        # Check no transactions reference this category
         if category_dao.has_transactions(conn, category_id):
             return False
 
         success = category_dao.delete(conn, category_id)
         if success:
             conn.commit()
+            invalidate_cache("categories_list")
         return success
     except Exception:
         conn.rollback()

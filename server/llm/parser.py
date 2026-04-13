@@ -26,7 +26,12 @@ def _build_category_tree_text(conn) -> str:
             if children:
                 sub_names = "、".join(c["name"] for c in children)
                 sub_text = f"（含子分类：{sub_names}）"
-            lines.append(f"  - {cat['name']}{sub_text}")
+            # Include expense_nature for expense categories
+            nature_text = ""
+            if cat.get("expense_nature"):
+                nature_map = {"fixed": "固定支出", "variable": "可变支出", "discretionary": "非必要支出"}
+                nature_text = f"[默认属性：{nature_map.get(cat['expense_nature'], cat['expense_nature'])}]"
+            lines.append(f"  - {cat['name']}{sub_text}{nature_text}")
     return "\n".join(lines)
 
 
@@ -42,7 +47,6 @@ def parse_transaction(user_input: str, today_str: str) -> dict:
     """Parse natural language input into a transaction structure."""
     conn = get_connection()
     try:
-        # Dynamically build prompt with current categories and accounts
         category_text = _build_category_tree_text(conn)
         account_text = _build_account_text(conn)
     finally:
@@ -56,7 +60,8 @@ def parse_transaction(user_input: str, today_str: str) -> dict:
 3. 根据描述推断分类，必须从下面的分类列表中选择最匹配的，子分类也必须从列表中选择，不要自创分类名。
 4. 日期：如果用户说了"今天"/"昨天"/具体日期，提取日期；否则默认今天（用{today_str}）。
 5. 账户：如果提到具体支付方式，从下面的账户列表中匹配；否则为null。
-6. 无法确定的信息设为null。
+6. 支出属性：如果是支出，根据描述判断属性。固定支出(fixed)如房租、保险；可变支出(variable)如水电、餐饮；非必要支出(discretionary)如旅游、娱乐。如果分类标注了默认属性则使用默认属性。
+7. 无法确定的信息设为null。
 
 {category_text}
 
@@ -70,7 +75,8 @@ def parse_transaction(user_input: str, today_str: str) -> dict:
   "subCategory": "二级分类名称或null",
   "account": "账户名称或null",
   "date": "YYYY-MM-DD",
-  "note": "补充备注或null"
+  "note": "补充备注或null",
+  "expenseNature": "fixed" 或 "variable" 或 "discretionary" 或 null
 }}"""
 
     response = chat(prompt, user_input)
@@ -91,6 +97,7 @@ def parse_transaction(user_input: str, today_str: str) -> dict:
         cat_name = parsed.get("category")
         sub_cat_name = parsed.get("subCategory")
         account_name = parsed.get("account")
+        expense_nature = parsed.get("expenseNature")
 
         category_id = None
         sub_category_id = None
@@ -102,12 +109,20 @@ def parse_transaction(user_input: str, today_str: str) -> dict:
                 category_id = cat["id"]
 
         if sub_cat_name and category_id:
-            # Try exact match first, then fuzzy
             sub_cat = category_dao.find_sub_by_name(conn, sub_cat_name, category_id)
             if not sub_cat:
                 sub_cat = category_dao.find_sub_by_name_fuzzy(conn, sub_cat_name, category_id)
             if sub_cat:
                 sub_category_id = sub_cat["id"]
+                # Sub-category may have its own expense_nature
+                if not expense_nature and sub_cat.get("expense_nature"):
+                    expense_nature = sub_cat["expense_nature"]
+
+        # If no expense_nature from AI, inherit from category
+        if not expense_nature and category_id:
+            cat = category_dao.find_by_id(conn, category_id)
+            if cat and cat.get("expense_nature"):
+                expense_nature = cat["expense_nature"]
 
         if account_name:
             with conn.cursor() as cursor:
@@ -124,6 +139,7 @@ def parse_transaction(user_input: str, today_str: str) -> dict:
             "account_id": account_id,
             "date": parsed.get("date") or today_str,
             "note": parsed.get("note"),
+            "expense_nature": expense_nature if cat_type == "expense" else None,
         }
     finally:
         conn.close()

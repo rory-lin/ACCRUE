@@ -23,7 +23,10 @@
       "Bash(curl -s -X POST http://localhost:3001/api/transactions -H 'Content-Type: application/json' -d '{\"type\":\"expense\",\"amount\":25.5,\"category_id\":2,\"account_id\":1,\"date\":\"2026-04-09\",\"note\":\"午餐\",\"tags\":[]}')",
       "Bash(curl -s -X POST http://localhost:3001/api/transactions -H \"Content-Type: application/json\" -d \"{\\\\\"type\\\\\":\\\\\"expense\\\\\",\\\\\"amount\\\\\":25.5,\\\\\"category_id\\\\\":2,\\\\\"account_id\\\\\":1,\\\\\"date\\\\\":\\\\\"2026-04-09\\\\\",\\\\\"note\\\\\":\\\\\"lunch\\\\\",\\\\\"tags\\\\\":[]}\")",
       "Bash(timeout 8 python -c \"from main import app; print\\('OK'\\)\")",
-      "Bash(python -c ':*)"
+      "Bash(python -c ':*)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //PID 66516 //F)",
+      "Read(//c/Users/user/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/subagent-driven-development/**)"
     ]
   }
 }

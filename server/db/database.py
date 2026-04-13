@@ -15,7 +15,8 @@ def get_pool() -> PooledDB:
     _pool = PooledDB(
         creator=pymysql,
         maxconnections=10,
-        mincached=0,
+        mincached=2,
+        maxcached=5,
         host=mysql_cfg.get("host", "localhost"),
         port=mysql_cfg.get("port", 3306),
         user=mysql_cfg.get("user", "root"),
@@ -24,6 +25,9 @@ def get_pool() -> PooledDB:
         charset=mysql_cfg.get("charset", "utf8mb4"),
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=False,
+        connect_timeout=5,
+        read_timeout=10,
+        write_timeout=10,
     )
     return _pool
 

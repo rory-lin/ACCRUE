@@ -5,6 +5,8 @@ from dao import category_dao
 from dao import transaction_dao
 from db.database import get_connection
 from models.transaction import CreateTransactionRequest, UpdateTransactionRequest, TransactionQuery
+from utils.cache import invalidate_cache
+from service.stats_service import invalidate_stats_cache
 
 
 def list_transactions(query: TransactionQuery) -> tuple[list, int]:
@@ -53,6 +55,8 @@ def create_transaction(data: CreateTransactionRequest) -> dict:
         account_dao.update_balance(conn, data.account_id, delta)
 
         conn.commit()
+        invalidate_cache("accounts_list")
+        invalidate_stats_cache()
         return transaction_dao.find_by_id(conn, new_id)
     except Exception:
         conn.rollback()
@@ -108,6 +112,8 @@ def update_transaction(transaction_id: int, data: UpdateTransactionRequest) -> d
         transaction_dao.update(conn, transaction_id, **fields)
 
         conn.commit()
+        invalidate_cache("accounts_list")
+        invalidate_stats_cache()
         return transaction_dao.find_by_id(conn, transaction_id)
     except Exception:
         conn.rollback()
@@ -131,6 +137,8 @@ def delete_transaction(transaction_id: int) -> bool:
         transaction_dao.delete(conn, transaction_id)
 
         conn.commit()
+        invalidate_cache("accounts_list")
+        invalidate_stats_cache()
         return True
     except Exception:
         conn.rollback()
@@ -157,6 +165,8 @@ def create_transfer(data):
         )
         account_dao.update_balance(conn, data.to_account_id, data.amount)
         conn.commit()
+        invalidate_cache("accounts_list")
+        invalidate_stats_cache()
         return {"success": True}
     except Exception:
         conn.rollback()

@@ -2,8 +2,10 @@ from dao import account_dao
 from dao import transaction_dao
 from db.database import get_connection
 from models.account import CreateAccountRequest, UpdateAccountRequest
+from utils.cache import ttl_cache, invalidate_cache
 
 
+@ttl_cache("accounts_list", ttl=120)
 def list_accounts() -> list:
     conn = get_connection()
     try:
@@ -31,6 +33,7 @@ def create_account(data: CreateAccountRequest) -> dict:
             icon=data.icon,
         )
         conn.commit()
+        invalidate_cache("accounts_list")
         return account_dao.find_by_id(conn, new_id)
     except Exception:
         conn.rollback()
@@ -59,6 +62,7 @@ def update_account(account_id: int, data: UpdateAccountRequest) -> dict:
     try:
         account_dao.update(conn, account_id, **fields)
         conn.commit()
+        invalidate_cache("accounts_list")
         return account_dao.find_by_id(conn, account_id)
     except Exception:
         conn.rollback()
@@ -82,6 +86,7 @@ def delete_account(account_id: int) -> bool:
         success = account_dao.delete(conn, account_id)
         if success:
             conn.commit()
+            invalidate_cache("accounts_list")
         return success
     except Exception:
         conn.rollback()
