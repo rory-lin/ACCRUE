@@ -8,6 +8,8 @@ import CalendarPage from '@/pages/CalendarPage';
 import AccountsPage from '@/pages/AccountsPage';
 import StatisticsPage from '@/pages/StatisticsPage';
 import SettingsPage from '@/pages/SettingsPage';
+import CategoryManagePage from '@/pages/CategoryManagePage';
+import BudgetPage from '@/pages/BudgetPage';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -30,6 +32,8 @@ export default function App() {
           <Route path="accounts" element={<AccountsPage />} />
           <Route path="statistics" element={<StatisticsPage />} />
           <Route path="settings" element={<SettingsPage onLogout={handleLogout} />} />
+          <Route path="settings/categories" element={<CategoryManagePage />} />
+          <Route path="settings/budgets" element={<BudgetPage />} />
         </Route>
         <Route path="/record" element={<RecordPage />} />
       </Routes>

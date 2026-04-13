@@ -1,140 +1,50 @@
-import { useEffect, useState } from 'react';
-import { Card, DatePicker, Row, Col, Progress, InputNumber, Button, message, Popconfirm, Spin } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
+import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
-import { getBudgetStatus, setBudget, deleteBudget } from '../api/budgets';
-import { useCategoryStore } from '../stores/categoryStore';
-import type { BudgetStatus } from '../types';
+import { useCategoryStore } from '@/stores/categoryStore';
+import { getBudgetStatus, setBudget } from '@/api/budgets';
 
 export default function BudgetPage() {
   const [month, setMonth] = useState(dayjs().format('YYYY-MM'));
-  const [budgets, setBudgets] = useState<BudgetStatus[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [budgets, setBudgets] = useState<any[]>([]);
+  const [newAmounts, setNewAmounts] = useState<Record<number, string>>({});
   const { expenseTree, fetchCategories } = useCategoryStore();
-  const [newBudgets, setNewBudgets] = useState<Record<number, number>>({});
 
   useEffect(() => { fetchCategories(); }, []);
+  useEffect(() => { getBudgetStatus(month).then(r => setBudgets(r.data || [])); }, [month]);
 
-  useEffect(() => { loadBudgets(); }, [month]);
-
-  async function loadBudgets() {
-    setLoading(true);
-    try {
-      const res = await getBudgetStatus(month);
-      setBudgets(res.data || []);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const handleSetBudget = async (categoryId: number) => {
-    const amount = newBudgets[categoryId];
-    if (!amount || amount <= 0) return;
-    try {
-      await setBudget({ category_id: categoryId, month, amount });
-      message.success('预算设置成功');
-      setNewBudgets(prev => {
-        const next = { ...prev };
-        delete next[categoryId];
-        return next;
-      });
-      loadBudgets();
-    } catch (err: any) {
-      message.error(err.message || '设置失败');
-    }
+  const handleSet = async (catId: number) => {
+    const amt = parseFloat(newAmounts[catId] || '0');
+    if (amt > 0) { await setBudget({ category_id: catId, month, amount: amt }); setNewAmounts(p => { const n = {...p}; delete n[catId]; return n; }); }
+    getBudgetStatus(month).then(r => setBudgets(r.data || []));
   };
 
-  const handleDelete = async (categoryId: number) => {
-    try {
-      const budget = budgets.find(b => b.category_id === categoryId);
-      if (budget) {
-        // Find budget ID from the API
-        const { getBudgets } = await import('../api/budgets');
-        const res = await getBudgets(month);
-        const b = (res.data || []).find((x: any) => x.category_id === categoryId);
-        if (b) await deleteBudget(b.id);
-        loadBudgets();
-      }
-    } catch (err: any) {
-      message.error('删除失败');
-    }
-  };
-
-  const budgetedCategoryIds = new Set(budgets.map(b => b.category_id));
-  const unbudgetedCategories = expenseTree.filter(c => !budgetedCategoryIds.has(c.id));
-
-  const totalBudget = budgets.reduce((s, b) => s + b.budget_amount, 0);
-  const totalSpent = budgets.reduce((s, b) => s + b.actual_spent, 0);
+  const budgetedIds = new Set(budgets.map(b => b.category_id));
 
   return (
-    <Spin spinning={loading}>
-      <Card title="预算管理">
-        <div style={{ marginBottom: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
-          <DatePicker
-            picker="month"
-            value={dayjs(month, 'YYYY-MM')}
-            onChange={d => d && setMonth(d.format('YYYY-MM'))}
-          />
-          <div>
-            总预算: ¥{totalBudget.toFixed(2)} / 已支出: ¥{totalSpent.toFixed(2)}
-            {totalBudget > 0 && (
-              <Progress
-                percent={Math.round((totalSpent / totalBudget) * 100)}
-                status={totalSpent > totalBudget ? 'exception' : undefined}
-                style={{ width: 200, marginLeft: 12 }}
-              />
-            )}
+    <div className="p-4 space-y-4">
+      <div className="flex items-center gap-3">
+        <h2 className="font-semibold text-lg">预算管理</h2>
+        <input type="month" value={month.slice(0,7)} onChange={e => setMonth(e.target.value + '-01')}
+          className="ml-auto text-sm border border-gray-200 rounded-lg px-2 py-1" />
+      </div>
+      {budgets.map(b => (
+        <div key={b.category_id} className="p-4 bg-white rounded-2xl">
+          <div className="flex justify-between mb-2"><span className="text-sm font-medium">{b.category_name}</span><span className="text-sm text-gray-400">¥{b.actual_spent.toFixed(2)} / ¥{b.budget_amount.toFixed(2)}</span></div>
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-1">
+            <div className={`h-full rounded-full ${b.is_over ? 'bg-danger' : 'bg-primary'}`} style={{ width: `${Math.min(Math.round((b.actual_spent / b.budget_amount) * 100), 100)}%` }} />
           </div>
+          <div className="text-xs text-gray-400">{Math.round((b.actual_spent / b.budget_amount) * 100)}% 已使用</div>
         </div>
-
-        {budgets.map(budget => (
-          <Card key={budget.category_id} size="small" style={{ marginBottom: 8 }}>
-            <Row align="middle" gutter={16}>
-              <Col span={6}>
-                <strong>{budget.category_name}</strong>
-                <div style={{ fontSize: 12, color: '#999' }}>
-                  预算 ¥{budget.budget_amount.toFixed(2)}
-                </div>
-              </Col>
-              <Col span={12}>
-                <Progress
-                  percent={Math.min(Math.round(budget.percentage), 100)}
-                  status={budget.is_over ? 'exception' : undefined}
-                  format={() => `¥${budget.actual_spent.toFixed(2)} / ¥${budget.budget_amount.toFixed(2)}`}
-                />
-              </Col>
-              <Col span={6} style={{ textAlign: 'right' }}>
-                <Popconfirm title="删除此预算？" onConfirm={() => handleDelete(budget.category_id)}>
-                  <Button type="text" danger icon={<DeleteOutlined />} size="small" />
-                </Popconfirm>
-              </Col>
-            </Row>
-          </Card>
-        ))}
-
-        {unbudgetedCategories.length > 0 && (
-          <Card title="设置新预算" size="small" style={{ marginTop: 16 }}>
-            {unbudgetedCategories.map(cat => (
-              <Row key={cat.id} align="middle" gutter={8} style={{ marginBottom: 8 }}>
-                <Col span={8}>{cat.name}</Col>
-                <Col span={10}>
-                  <InputNumber
-                    prefix="¥"
-                    min={0}
-                    value={newBudgets[cat.id]}
-                    onChange={val => setNewBudgets(prev => ({ ...prev, [cat.id]: val || 0 }))}
-                    style={{ width: '100%' }}
-                    size="small"
-                  />
-                </Col>
-                <Col span={6}>
-                  <Button type="primary" size="small" onClick={() => handleSetBudget(cat.id)}>设置</Button>
-                </Col>
-              </Row>
-            ))}
-          </Card>
-        )}
-      </Card>
-    </Spin>
+      ))}
+      {expenseTree.filter(c => !budgetedIds.has(c.id)).map(cat => (
+        <div key={cat.id} className="flex items-center gap-2 p-3 bg-white rounded-xl">
+          <span className="flex-1 text-sm">{cat.name}</span>
+          <input type="number" placeholder="预算金额" value={newAmounts[cat.id] || ''}
+            onChange={e => setNewAmounts(p => ({...p, [cat.id]: e.target.value}))}
+            className="w-24 h-8 px-2 text-sm border border-gray-200 rounded-lg" />
+          <button onClick={() => handleSet(cat.id)} className="h-8 px-3 rounded-lg bg-primary text-white text-xs">设置</button>
+        </div>
+      ))}
+    </div>
   );
 }
