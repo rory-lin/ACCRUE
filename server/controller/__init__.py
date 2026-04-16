@@ -7,6 +7,7 @@ from controller import (
     export_controller,
     settings_controller,
     auth_controller,
+    media_controller,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "export_controller",
     "settings_controller",
     "auth_controller",
+    "media_controller",
 ]

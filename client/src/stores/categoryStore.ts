@@ -29,6 +29,8 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
         getCategories('income'),
       ]);
       set({ expenseTree: expRes.data || [], incomeTree: incRes.data || [], lastFetch: Date.now() });
+    } catch {
+      // Auth errors are handled by client.ts redirect; silently keep existing data
     } finally {
       set({ loading: false });
     }

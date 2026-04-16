@@ -71,6 +71,9 @@ MIGRATIONS = {
         "UPDATE categories SET expense_nature = 'discretionary' WHERE name = '休闲娱乐' AND type = 'expense';",
         "UPDATE categories SET expense_nature = 'discretionary' WHERE name = '其他支出' AND type = 'expense';",
     ],
+    4: [
+        "ALTER TABLE categories MODIFY COLUMN icon TEXT DEFAULT NULL;",
+    ],
 }
 
 

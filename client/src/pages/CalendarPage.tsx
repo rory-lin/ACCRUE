@@ -16,22 +16,23 @@ export default function CalendarPage() {
   const monthEnd = currentMonth.endOf('month').format('YYYY-MM-DD');
 
   useEffect(() => {
-    getTransactions({ date_from: monthStart, date_to: monthEnd, page: 1, page_size: 200 }).then(res => {
+    getTransactions({ date_from: monthStart, date_to: monthEnd, page: 1, page_size: 500 }).then(res => {
       setTransactions(res.data?.items || []);
     });
   }, [monthStart, monthEnd]);
 
   const dateMap = useMemo(() => {
-    const map: Record<string, { expense: boolean; income: boolean }> = {};
+    const map: Record<string, { expense: boolean; income: boolean; expenseAmt: number; incomeAmt: number }> = {};
     transactions.forEach(t => {
-      if (!map[t.date]) map[t.date] = { expense: false, income: false };
-      if (t.type === 'expense') map[t.date]!.expense = true;
-      if (t.type === 'income') map[t.date]!.income = true;
+      if (!map[t.date]) map[t.date] = { expense: false, income: false, expenseAmt: 0, incomeAmt: 0 };
+      if (t.type === 'expense') { map[t.date]!.expense = true; map[t.date]!.expenseAmt += t.amount; }
+      if (t.type === 'income') { map[t.date]!.income = true; map[t.date]!.incomeAmt += t.amount; }
     });
     return map;
   }, [transactions]);
 
   const selectedDayTransactions = transactions.filter(t => t.date === selectedDate);
+  const dayInfo = dateMap[selectedDate];
 
   const startDay = currentMonth.startOf('month');
   const endDay = currentMonth.endOf('month');
@@ -64,24 +65,44 @@ export default function CalendarPage() {
           return (
             <button key={dateStr} onClick={() => setSelectedDate(dateStr)} className="flex flex-col items-center py-1.5 rounded-lg">
               <span className={`w-8 h-8 flex items-center justify-center rounded-full text-sm ${isSelected ? 'bg-primary text-white font-bold' : isToday ? 'bg-blue-50 text-primary font-medium' : ''}`}>{day}</span>
-              <div className="flex gap-0.5 mt-0.5">
-                {info?.expense && <div className="w-1.5 h-1.5 rounded-full bg-danger" />}
-                {info?.income && <div className="w-1.5 h-1.5 rounded-full bg-success" />}
-              </div>
+              {info && (info.expense || info.income) && (
+                <div className="flex gap-0.5 mt-0.5">
+                  {info.expense && <div className="w-1.5 h-1.5 rounded-full bg-danger" />}
+                  {info.income && <div className="w-1.5 h-1.5 rounded-full bg-success" />}
+                </div>
+              )}
             </button>
           );
         })}
       </div>
-      <div className="mt-4">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-semibold">{selectedDate}</span>
-          <span className="text-xs text-gray-400">{selectedDayTransactions.length}笔交易</span>
+
+      {/* Daily summary */}
+      {dayInfo && (
+        <div className="mt-4 flex gap-3">
+          {dayInfo.expenseAmt > 0 && (
+            <div className="flex-1 p-3 bg-white rounded-xl border border-gray-100">
+              <div className="text-xs text-gray-400 mb-1">支出</div>
+              <div className="text-sm font-bold text-danger">-¥{dayInfo.expenseAmt.toFixed(2)}</div>
+            </div>
+          )}
+          {dayInfo.incomeAmt > 0 && (
+            <div className="flex-1 p-3 bg-white rounded-xl border border-gray-100">
+              <div className="text-xs text-gray-400 mb-1">收入</div>
+              <div className="text-sm font-bold text-success">+¥{dayInfo.incomeAmt.toFixed(2)}</div>
+            </div>
+          )}
+          {!dayInfo.expense && !dayInfo.income && (
+            <div className="w-full p-3 bg-white rounded-xl border border-gray-100 text-center text-sm text-gray-400">当日无交易</div>
+          )}
         </div>
+      )}
+
+      <div className="mt-3">
         <div className="space-y-1">
           {selectedDayTransactions.map(t => <TransactionItem key={t.id} transaction={t} onClick={() => setSelectedTx(t)} />)}
-          {selectedDayTransactions.length === 0 && <div className="text-center py-6 text-sm text-gray-300">当日无交易</div>}
         </div>
       </div>
+
       <TransactionDetail transaction={selectedTx} onClose={() => setSelectedTx(null)} />
     </div>
   );

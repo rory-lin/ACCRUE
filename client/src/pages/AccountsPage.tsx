@@ -55,8 +55,8 @@ export default function AccountsPage() {
         ))}
       </div>
       {dialogOpen && (
-        <div className="fixed inset-0 z-50 bg-black/30 flex items-end justify-center" onClick={() => setDialogOpen(false)}>
-          <div className="bg-white w-full max-w-md rounded-t-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center px-4" onClick={() => setDialogOpen(false)}>
+          <div className="bg-white w-full max-w-sm rounded-2xl p-5 space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="font-semibold">{editTarget ? '编辑账户' : '添加账户'}</h3>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="账户名称"
               className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm" />
