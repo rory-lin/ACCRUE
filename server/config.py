@@ -1,15 +1,27 @@
 import yaml
 import os
 from typing import Any
+from urllib.parse import urlparse
 
 
 _config: dict[str, Any] | None = None
 
 
 def _env(key: str, default: str | None = None) -> str | None:
-    """Read from environment variable, return None if not set."""
     val = os.environ.get(key)
     return val if val is not None else default
+
+
+def _parse_database_url(url: str) -> dict[str, Any]:
+    """Parse DATABASE_URL like mysql://user:password@host:port/database"""
+    parsed = urlparse(url)
+    return {
+        "host": parsed.hostname or "localhost",
+        "port": parsed.port or 3306,
+        "user": parsed.username or "root",
+        "password": parsed.password or "",
+        "database": parsed.path.lstrip("/") or "accrue",
+    }
 
 
 def get_config() -> dict[str, Any]:
@@ -28,6 +40,19 @@ def get_config() -> dict[str, Any]:
     mysql_yaml = yaml_config.get("mysql", {})
     llm_yaml = yaml_config.get("llm", {})
 
+    # DATABASE_URL takes priority over individual MYSQL_* vars
+    database_url = _env("DATABASE_URL")
+    if database_url:
+        mysql_cfg = _parse_database_url(database_url)
+    else:
+        mysql_cfg = {
+            "host": _env("MYSQL_HOST", mysql_yaml.get("host", "localhost")),
+            "port": int(_env("MYSQL_PORT", str(mysql_yaml.get("port", 3306)))),
+            "user": _env("MYSQL_USER", mysql_yaml.get("user", "root")),
+            "password": _env("MYSQL_PASSWORD", mysql_yaml.get("password", "")),
+            "database": _env("MYSQL_DATABASE", mysql_yaml.get("database", "accrue")),
+        }
+
     _config = {
         "llm": {
             "base_url": _env("LLM_BASE_URL", llm_yaml.get("base_url", "https://api.openai.com/v1")),
@@ -38,14 +63,7 @@ def get_config() -> dict[str, Any]:
         "app": {
             "port": int(_env("PORT", str(yaml_config.get("app", {}).get("port", 3001)))),
         },
-        "mysql": {
-            "host": _env("MYSQL_HOST", mysql_yaml.get("host", "localhost")),
-            "port": int(_env("MYSQL_PORT", str(mysql_yaml.get("port", 3306)))),
-            "user": _env("MYSQL_USER", mysql_yaml.get("user", "root")),
-            "password": _env("MYSQL_PASSWORD", mysql_yaml.get("password", "")),
-            "database": _env("MYSQL_DATABASE", mysql_yaml.get("database", "accrue")),
-            "charset": _env("MYSQL_CHARSET", mysql_yaml.get("charset", "utf8mb4")),
-        },
+        "mysql": mysql_cfg,
     }
 
     return _config
