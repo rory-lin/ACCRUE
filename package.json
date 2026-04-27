@@ -1,5 +1,8 @@
 {
   "name": "accrue",
   "version": "0.1.0",
-  "private": true
+  "private": true,
+  "scripts": {
+    "build": "cd client && npm install && npm run build"
+  }
 }
