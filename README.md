@@ -98,20 +98,20 @@ npm run dev
 
 4. **配置环境变量**（Settings → Environment Variables）：
 
-   **必填（3 个）：**
+   **必填（5 个）：**
 
    | 变量名 | 说明 | 示例 |
    |--------|------|------|
    | `DATABASE_URL` | 数据库连接字符串 | `mysql://user:password@host:3306/accrue` |
+   | `LLM_BASE_URL` | LLM API 地址 | `https://api.siliconflow.cn/v1` |
    | `LLM_API_KEY` | LLM API Key | `sk-xxx...` |
+   | `LLM_MODEL` | 模型名称 | `Pro/deepseek-ai/DeepSeek-V3.2` |
    | `JWT_SECRET` | JWT 签名密钥（随机字符串） | `my-secret-key-abc123` |
 
    **可选（有默认值）：**
 
    | 变量名 | 说明 | 默认值 |
    |--------|------|--------|
-   | `LLM_BASE_URL` | LLM API 地址 | `https://api.openai.com/v1` |
-   | `LLM_MODEL` | 模型名称 | `gpt-4o-mini` |
    | `ADMIN_USERNAME` | 登录用户名 | `rory` |
    | `ADMIN_PASSWORD` | 登录密码 | `qaz.007.008` |
 
