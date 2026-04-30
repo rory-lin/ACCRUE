@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Mic, Calendar, Sparkles } from 'lucide-react';
 import CategoryIcon from '@/components/category/CategoryIcon';
@@ -8,10 +8,11 @@ import AmountDisplay from '@/components/record/AmountDisplay';
 import { useAccountStore } from '@/stores/accountStore';
 import { useCategoryStore } from '@/stores/categoryStore';
 import { useTransactionStore } from '@/stores/transactionStore';
+import { useDashboardStore } from '@/stores/dashboardStore';
 import { parseInput } from '@/api/ai';
 import { getSetting } from '@/api/settings';
 import dayjs from 'dayjs';
-import type { CategoryTreeNode } from '@/types';
+import type { CategoryTreeNode, Transaction } from '@/types';
 
 const NATURE_OPTIONS = [
   { label: '固定', value: 'fixed' },
@@ -19,20 +20,29 @@ const NATURE_OPTIONS = [
   { label: '非必要', value: 'discretionary' },
 ];
 
+interface LocationState {
+  transaction?: Transaction;
+}
+
 export default function RecordPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const editTx = (location.state as LocationState | null)?.transaction ?? null;
+  const isEdit = !!editTx;
+
   const { accounts, fetchAccounts } = useAccountStore();
   const { expenseTree, incomeTree, fetchCategories } = useCategoryStore();
-  const { addTransaction } = useTransactionStore();
+  const { addTransaction, editTransaction } = useTransactionStore();
+  const { fetchDashboard } = useDashboardStore();
 
-  const [txType, setTxType] = useState<'expense' | 'income'>('expense');
+  const [txType, setTxType] = useState<'expense' | 'income'>(editTx?.type ?? 'expense');
   const [selectedCat, setSelectedCat] = useState<CategoryTreeNode | null>(null);
   const [selectedSubCatId, setSelectedSubCatId] = useState<number | null>(null);
-  const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
-  const [accountId, setAccountId] = useState<number | null>(null);
-  const [nature, setNature] = useState<string | null>(null);
-  const [date, setDate] = useState(dayjs().format('YYYY-MM-DD'));
+  const [amount, setAmount] = useState(editTx ? String(editTx.amount) : '');
+  const [note, setNote] = useState(editTx?.note ?? '');
+  const [accountId, setAccountId] = useState<number | null>(editTx?.account_id ?? null);
+  const [nature, setNature] = useState<string | null>(editTx?.expense_nature ?? null);
+  const [date, setDate] = useState(editTx?.date ?? dayjs().format('YYYY-MM-DD'));
   const [listening, setListening] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiInput, setAiInput] = useState('');
@@ -42,13 +52,30 @@ export default function RecordPage() {
   useEffect(() => {
     const init = async () => {
       await Promise.all([fetchCategories(), fetchAccounts()]);
-      try {
-        const res = await getSetting('default_account_id');
-        if (res.data?.value) setAccountId(parseInt(res.data.value, 10));
-      } catch { /* ignore */ }
+      if (!isEdit) {
+        try {
+          const res = await getSetting('default_account_id');
+          if (res.data?.value) setAccountId(parseInt(res.data.value, 10));
+        } catch { /* ignore */ }
+      }
     };
     init();
   }, []);
+
+  // Pre-fill category selection in edit mode once categories are loaded
+  useEffect(() => {
+    if (!editTx || tree.length === 0 || selectedCat) return;
+    if (editTx.sub_category_id) {
+      const parent = tree.find(c => c.children?.some(s => s.id === editTx.sub_category_id));
+      if (parent) {
+        setSelectedCat(parent);
+        setSelectedSubCatId(editTx.sub_category_id);
+      }
+    } else {
+      const cat = tree.find(c => c.id === editTx.category_id);
+      if (cat) setSelectedCat(cat);
+    }
+  }, [tree, editTx]);
 
   const handleCatSelect = (cat: CategoryTreeNode) => {
     setSelectedCat(cat);
@@ -77,18 +104,23 @@ export default function RecordPage() {
   const handleConfirm = async () => {
     if (!selectedCat || !amount || parseFloat(amount) <= 0) return;
     if (!accountId) return;
+    const payload = {
+      type: txType,
+      amount: parseFloat(amount),
+      category_id: selectedSubCatId || selectedCat.id,
+      sub_category_id: selectedSubCatId || null,
+      account_id: accountId,
+      date,
+      note,
+      expense_nature: txType === 'expense' ? nature as 'fixed' | 'variable' | 'discretionary' | null : null,
+    };
     try {
-      await addTransaction({
-        type: txType,
-        amount: parseFloat(amount),
-        category_id: selectedSubCatId || selectedCat.id,
-        sub_category_id: selectedSubCatId || null,
-        account_id: accountId,
-        date,
-        note,
-        tags: [],
-        expense_nature: txType === 'expense' ? nature as 'fixed' | 'variable' | 'discretionary' | null : null,
-      });
+      if (isEdit && editTx) {
+        await editTransaction(editTx.id, payload);
+        await fetchDashboard();
+      } else {
+        await addTransaction(payload);
+      }
       navigate(-1);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : '保存失败');
@@ -168,7 +200,7 @@ export default function RecordPage() {
       {/* Top bar */}
       <div className="flex items-center h-12 px-4 border-b border-gray-100">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-lg hover:bg-gray-100"><ArrowLeft className="w-5 h-5" /></button>
-        <span className="ml-2 font-semibold">记一笔</span>
+        <span className="ml-2 font-semibold">{isEdit ? '编辑记录' : '记一笔'}</span>
       </div>
 
       {/* Type toggle */}

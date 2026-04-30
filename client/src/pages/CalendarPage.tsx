@@ -16,7 +16,7 @@ export default function CalendarPage() {
   const monthEnd = currentMonth.endOf('month').format('YYYY-MM-DD');
 
   useEffect(() => {
-    getTransactions({ date_from: monthStart, date_to: monthEnd, page: 1, page_size: 500 }).then(res => {
+    getTransactions({ date_from: monthStart, date_to: monthEnd, page: 1, page_size: 100 }).then(res => {
       setTransactions(res.data?.items || []);
     });
   }, [monthStart, monthEnd]);
@@ -66,9 +66,9 @@ export default function CalendarPage() {
             <button key={dateStr} onClick={() => setSelectedDate(dateStr)} className="flex flex-col items-center py-1.5 rounded-lg">
               <span className={`w-8 h-8 flex items-center justify-center rounded-full text-sm ${isSelected ? 'bg-primary text-white font-bold' : isToday ? 'bg-blue-50 text-primary font-medium' : ''}`}>{day}</span>
               {info && (info.expense || info.income) && (
-                <div className="flex gap-0.5 mt-0.5">
-                  {info.expense && <div className="w-1.5 h-1.5 rounded-full bg-danger" />}
-                  {info.income && <div className="w-1.5 h-1.5 rounded-full bg-success" />}
+                <div className="flex flex-col items-center mt-0.5 leading-tight">
+                  {info.expenseAmt > 0 && <span className="text-[9px] text-danger">{info.expenseAmt >= 1000 ? `${(info.expenseAmt / 1000).toFixed(1)}k` : info.expenseAmt.toFixed(0)}</span>}
+                  {info.incomeAmt > 0 && <span className="text-[9px] text-success">{info.incomeAmt >= 1000 ? `+${(info.incomeAmt / 1000).toFixed(1)}k` : `+${info.incomeAmt.toFixed(0)}`}</span>}
                 </div>
               )}
             </button>
